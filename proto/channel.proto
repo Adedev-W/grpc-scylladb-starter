@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package channel;
+
+service ChannelService {
+  rpc CreateChannel(CreateChannelRequest) returns (Channel);
+  rpc GetChannel(GetChannelRequest) returns (Channel);
+  rpc ListChannels(ListChannelsRequest) returns (ListChannelsResponse);
+}
+
+message Channel {
+  uint64 id = 1;
+  string name = 2;
+  uint64 created_at_unix_ms = 3;
+}
+
+message CreateChannelRequest {
+  string name = 1;
+}
+
+message GetChannelRequest {
+  uint64 id = 1;
+}
+
+message ListChannelsRequest {
+  uint64 offset = 1;
+  uint32 limit = 2;
+}
+
+message ListChannelsResponse {
+  repeated Channel channels = 1;
+  uint64 next_offset = 2;
+  uint64 total_count = 3;
+}
