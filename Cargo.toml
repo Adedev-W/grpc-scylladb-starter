@@ -6,6 +6,7 @@ build = "build.rs"
 
 [dependencies]
 prost = "0.14.4"
+scylla = "1.8.0"
 thiserror = "2"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "signal", "sync"] }
 tonic = "0.14.6"

@@ -1,13 +1,12 @@
 //! In-memory gRPC Channel service with shared client and server helpers.
 
-pub mod pb {
-    tonic::include_proto!("channel");
-}
+// pub mod pb {
+//     tonic::include_proto!("channel");
+// }
 
-mod service;
-mod store;
+// mod service;
 
-pub mod client;
-pub mod server;
+// pub mod client;
+// pub mod server;
 
-pub use service::ChannelServiceImpl;
+// pub use service::ChannelServiceImpl;

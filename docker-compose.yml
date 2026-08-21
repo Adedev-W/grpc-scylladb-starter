@@ -1,0 +1,42 @@
+services:
+  scylla:
+    image: scylladb/scylla:latest
+    container_name: scylla-node
+    # --developer-mode 1 is essential for local testing to reduce memory footprint
+    # --smp 1 restricts ScyllaDB to use only 1 CPU core
+    command: --smp 1 --developer-mode 1
+    ports:
+      - "9042:9042"    # Native CQL port for standard client connections
+      - "19042:19042"  # Shard-aware port (recommended for driver optimization)
+    volumes:
+      - scylla_data:/var/lib/scylla
+    healthcheck:
+      # Ensures the node is fully operational before dependent services start
+      test: ["CMD-SHELL", "cqlsh -e 'describe cluster' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # Auxiliary service to automatically provision the keyspace during startup
+  scylla-init:
+    image: scylladb/scylla:latest
+    container_name: scylla-init
+    depends_on:
+      scylla:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-c"]
+    command: |
+      echo "ScyllaDB is ready, starting initialization..."
+      
+      cqlsh scylla -e "
+        CREATE KEYSPACE IF NOT EXISTS grpc_starter 
+        WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+      "
+      
+      echo "Keyspace created successfully."
+
+volumes:
+  # Persists database files across container restarts
+  scylla_data:
+    driver: local
