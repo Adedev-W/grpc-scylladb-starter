@@ -1,14 +1,8 @@
-use scylla::client::session::Session;
-use scylla::client::session_builder::SessionBuilder;
-use std::error::Error;
+use grpc_scylladb_starter::{bootstrap, config::AppConfig};
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
-   let session: Session = SessionBuilder::new()
-        .known_node("127.0.0.1:9042")
-        .known_node("1.2.3.4:9876")
-        .build()
-        .await?;
-
-   Ok(())
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let config = AppConfig::from_env()?;
+    bootstrap::run(config).await?;
+    Ok(())
 }

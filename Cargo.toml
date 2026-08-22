@@ -1,10 +1,11 @@
 [package]
-name = "rpc-api"
+name = "grpc-scylladb-starter"
 version = "0.1.0"
 edition = "2024"
 build = "build.rs"
 
 [dependencies]
+async-trait = "0.1"
 prost = "0.14.4"
 scylla = "1.8.0"
 thiserror = "2"
@@ -16,4 +17,5 @@ tonic-prost = "0.14.6"
 tokio-stream = { version = "0.1", features = ["net"] }
 
 [build-dependencies]
+protoc-bin-vendored = "3"
 tonic-prost-build = "0.14.6"

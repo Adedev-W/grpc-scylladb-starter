@@ -32,6 +32,12 @@ services:
       cqlsh scylla -e "
         CREATE KEYSPACE IF NOT EXISTS grpc_starter 
         WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+
+        CREATE TABLE IF NOT EXISTS grpc_starter.channels (
+          id bigint PRIMARY KEY,
+          name text,
+          created_at_unix_ms bigint
+        );
       "
       
       echo "Keyspace created successfully."

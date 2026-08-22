@@ -1,17 +1,27 @@
-# rpc-api
+# grpc-scylladb-starter
 
-## Run
+Backend template dengan gRPC API dan boundary repository yang siap dihubungkan
+ke ScyllaDB. Runtime saat ini memakai in-memory adapter sebagai vertical slice
+awal; konfigurasi dan port database sudah dipisahkan untuk tahap adapter berikutnya.
 
-Server:
+## Run server
 
-```bash
-cargo run --bin server -- --addr 127.0.0.1:50051
-```
-
-Client:
+Konfigurasi opsional:
 
 ```bash
-cargo run -- create general
-cargo run -- get 1
-cargo run -- list 0 10
+export GRPC_ADDR=127.0.0.1:50051
+export SCYLLA_NODES=127.0.0.1:9042
+export SCYLLA_KEYSPACE=grpc_starter
 ```
+
+```bash
+cargo run
+```
+
+Struktur utama:
+
+- `src/domain`: aturan bisnis dan model.
+- `src/application`: use case dan repository port.
+- `src/transport/grpc`: adapter protobuf/tonic.
+- `src/infrastructure`: implementasi adapter eksternal.
+- `src/bootstrap.rs`: dependency wiring.
