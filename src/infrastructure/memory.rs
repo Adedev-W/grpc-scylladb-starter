@@ -40,6 +40,28 @@ impl ChannelRepository for InMemoryChannelRepository {
         Ok(channels.iter().find(|channel| channel.id == id).cloned())
     }
 
+    async fn update(&self, id: u64, name: String) -> Result<Option<Channel>, RepositoryError> {
+        let mut channels = self
+            .channels
+            .lock()
+            .map_err(|_| RepositoryError::Operation("lock poisoned".into()))?;
+        let Some(channel) = channels.iter_mut().find(|channel| channel.id == id) else {
+            return Ok(None);
+        };
+        channel.name = name;
+        Ok(Some(channel.clone()))
+    }
+
+    async fn delete(&self, id: u64) -> Result<bool, RepositoryError> {
+        let mut channels = self
+            .channels
+            .lock()
+            .map_err(|_| RepositoryError::Operation("lock poisoned".into()))?;
+        let original_len = channels.len();
+        channels.retain(|channel| channel.id != id);
+        Ok(channels.len() != original_len)
+    }
+
     async fn list(
         &self,
         offset: usize,

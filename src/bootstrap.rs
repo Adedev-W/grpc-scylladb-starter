@@ -1,6 +1,7 @@
 use crate::{
-    application::ChannelService, config::AppConfig,
-    infrastructure::memory::InMemoryChannelRepository,
+    application::ChannelService,
+    config::AppConfig,
+    infrastructure::scylla::{ScyllaChannelRepository, connect},
     pb::channel_service_server::ChannelServiceServer,
     transport::grpc::channel_service::GrpcChannelService,
 };
@@ -10,12 +11,15 @@ use tonic::transport::Server;
 
 #[derive(Debug, Error)]
 pub enum BootstrapError {
+    #[error("scylla connection failed: {0}")]
+    Scylla(String),
     #[error(transparent)]
     Transport(#[from] tonic::transport::Error),
 }
 
 pub async fn run(config: AppConfig) -> Result<(), BootstrapError> {
-    let repository = Arc::new(InMemoryChannelRepository::default());
+    let session = connect(&config).await.map_err(BootstrapError::Scylla)?;
+    let repository = Arc::new(ScyllaChannelRepository::new(session));
     let channel_service = ChannelService::new(repository);
     let grpc_service = GrpcChannelService::new(channel_service);
 

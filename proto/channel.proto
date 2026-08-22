@@ -2,9 +2,13 @@ syntax = "proto3";
 
 package channel;
 
+import "google/protobuf/empty.proto";
+
 service ChannelService {
   rpc CreateChannel(CreateChannelRequest) returns (Channel);
   rpc GetChannel(GetChannelRequest) returns (Channel);
+  rpc UpdateChannel(UpdateChannelRequest) returns (Channel);
+  rpc DeleteChannel(DeleteChannelRequest) returns (google.protobuf.Empty);
   rpc ListChannels(ListChannelsRequest) returns (ListChannelsResponse);
 }
 
@@ -19,6 +23,15 @@ message CreateChannelRequest {
 }
 
 message GetChannelRequest {
+  uint64 id = 1;
+}
+
+message UpdateChannelRequest {
+  uint64 id = 1;
+  string name = 2;
+}
+
+message DeleteChannelRequest {
   uint64 id = 1;
 }
 

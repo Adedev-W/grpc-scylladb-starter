@@ -54,6 +54,28 @@ impl ChannelService {
             .ok_or(ApplicationError::NotFound)
     }
 
+    pub async fn update(&self, id: u64, name: String) -> Result<Channel, ApplicationError> {
+        if id == 0 {
+            return Err(ChannelError::InvalidId.into());
+        }
+        let name = validate_name(name)?;
+        self.repository
+            .update(id, name)
+            .await?
+            .ok_or(ApplicationError::NotFound)
+    }
+
+    pub async fn delete(&self, id: u64) -> Result<(), ApplicationError> {
+        if id == 0 {
+            return Err(ChannelError::InvalidId.into());
+        }
+        if self.repository.delete(id).await? {
+            Ok(())
+        } else {
+            Err(ApplicationError::NotFound)
+        }
+    }
+
     pub async fn list(
         &self,
         query: ListChannels,

@@ -14,6 +14,8 @@ pub enum RepositoryError {
 pub trait ChannelRepository: Send + Sync {
     async fn create(&self, name: String) -> Result<Channel, RepositoryError>;
     async fn get(&self, id: u64) -> Result<Option<Channel>, RepositoryError>;
+    async fn update(&self, id: u64, name: String) -> Result<Option<Channel>, RepositoryError>;
+    async fn delete(&self, id: u64) -> Result<bool, RepositoryError>;
     async fn list(
         &self,
         offset: usize,

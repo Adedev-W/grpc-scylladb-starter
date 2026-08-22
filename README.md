@@ -1,8 +1,7 @@
 # grpc-scylladb-starter
 
-Backend template dengan gRPC API dan boundary repository yang siap dihubungkan
-ke ScyllaDB. Runtime saat ini memakai in-memory adapter sebagai vertical slice
-awal; konfigurasi dan port database sudah dipisahkan untuk tahap adapter berikutnya.
+Backend template dengan gRPC API dan ScyllaDB. Runtime menggunakan repository
+ScyllaDB dan konfigurasi environment.
 
 ## Run server
 
@@ -17,6 +16,22 @@ export SCYLLA_KEYSPACE=grpc_starter
 ```bash
 cargo run
 ```
+
+Jalankan integration test CRUD terhadap server yang sedang berjalan:
+
+```bash
+TEST_GRPC_ENDPOINT=http://127.0.0.1:50051 cargo test --test channel_crud
+```
+
+Pastikan ScyllaDB dan schema sudah aktif sebelum menjalankan server:
+
+```bash
+sudo docker compose up -d
+cargo run
+```
+
+Test melakukan create, get, update, list, delete, lalu memastikan channel yang
+dihapus menghasilkan status gRPC `NOT_FOUND`.
 
 Struktur utama:
 

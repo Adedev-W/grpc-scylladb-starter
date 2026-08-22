@@ -46,6 +46,30 @@ impl pb::channel_service_server::ChannelService for GrpcChannelService {
         Ok(Response::new(to_proto(channel)))
     }
 
+    async fn update_channel(
+        &self,
+        request: Request<pb::UpdateChannelRequest>,
+    ) -> Result<Response<pb::Channel>, Status> {
+        let request = request.into_inner();
+        let channel = self
+            .service
+            .update(request.id, request.name)
+            .await
+            .map_err(to_status)?;
+        Ok(Response::new(to_proto(channel)))
+    }
+
+    async fn delete_channel(
+        &self,
+        request: Request<pb::DeleteChannelRequest>,
+    ) -> Result<Response<()>, Status> {
+        self.service
+            .delete(request.into_inner().id)
+            .await
+            .map_err(to_status)?;
+        Ok(Response::new(()))
+    }
+
     async fn list_channels(
         &self,
         request: Request<pb::ListChannelsRequest>,

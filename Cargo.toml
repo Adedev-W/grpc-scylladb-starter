@@ -7,6 +7,7 @@ build = "build.rs"
 [dependencies]
 async-trait = "0.1"
 prost = "0.14.4"
+prost-types = "0.14.4"
 scylla = "1.8.0"
 thiserror = "2"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "signal", "sync"] }
@@ -15,6 +16,10 @@ tonic-prost = "0.14.6"
 
 [dev-dependencies]
 tokio-stream = { version = "0.1", features = ["net"] }
+
+[[test]]
+name = "channel_crud"
+path = "test/channel_crud.rs"
 
 [build-dependencies]
 protoc-bin-vendored = "3"
