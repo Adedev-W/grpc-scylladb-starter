@@ -62,7 +62,11 @@ async fn channel_crud_lifecycle() -> Result<(), Box<dyn std::error::Error>> {
         .get_channel(GetChannelRequest { id: created.id })
         .await
         .expect_err("deleted channel should not be returned");
-    println!("get after delete: code={:?}, message={}", missing.code(), missing.message());
+    println!(
+        "get after delete: code={:?}, message={}",
+        missing.code(),
+        missing.message()
+    );
     assert_eq!(missing.code(), tonic::Code::NotFound);
 
     Ok(())

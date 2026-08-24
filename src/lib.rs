@@ -8,6 +8,9 @@ pub mod infrastructure;
 pub mod pb {
     tonic::include_proto!("channel");
 }
+pub mod auth_pb {
+    tonic::include_proto!("auth");
+}
 pub mod transport;
 
 // mod service;
