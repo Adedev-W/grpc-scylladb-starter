@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package auth;
+
+service AuthorizationService {
+  rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse);
+}
+
+message Principal {
+  // Subject or SAN extracted from the verified mTLS client certificate.
+  string subject = 1;
+  repeated string roles = 2;
+}
+
+message Resource {
+  string type = 1;
+  string id = 2;
+}
+
+enum Action {
+  ACTION_UNSPECIFIED = 0;
+  ACTION_READ = 1;
+  ACTION_LIST = 2;
+  ACTION_CREATE = 3;
+  ACTION_UPDATE = 4;
+  ACTION_DELETE = 5;
+}
+
+message CheckPermissionRequest {
+  Principal principal = 1;
+  Resource resource = 2;
+  Action action = 3;
+}
+
+message CheckPermissionResponse {
+  bool allowed = 1;
+  string reason = 2;
+}
