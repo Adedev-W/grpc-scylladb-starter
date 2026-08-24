@@ -1,7 +1,6 @@
 use crate::{
     application::{
-        Action, ChannelService, CreateChannel, InMemoryAuthorizer, ListChannels, Principal,
-        Resource,
+        Action, Authorizer, ChannelService, CreateChannel, ListChannels, Principal, Resource,
     },
     pb,
 };
@@ -12,7 +11,7 @@ use tonic::{Request, Response, Status};
 #[derive(Clone)]
 pub struct GrpcChannelService {
     service: Arc<ChannelService>,
-    authorizer: Option<Arc<InMemoryAuthorizer>>,
+    authorizer: Option<Arc<dyn Authorizer>>,
 }
 
 impl GrpcChannelService {
@@ -23,14 +22,14 @@ impl GrpcChannelService {
         }
     }
 
-    pub fn with_authorizer(service: ChannelService, authorizer: InMemoryAuthorizer) -> Self {
+    pub fn with_authorizer(service: ChannelService, authorizer: Arc<dyn Authorizer>) -> Self {
         Self {
             service: Arc::new(service),
-            authorizer: Some(Arc::new(authorizer)),
+            authorizer: Some(authorizer),
         }
     }
 
-    fn authorize<T>(
+    async fn authorize<T>(
         &self,
         request: Request<T>,
         action: Action,
@@ -49,6 +48,7 @@ impl GrpcChannelService {
                 },
                 action,
             )
+            .await
             .map_err(|_| Status::permission_denied("access denied"))?;
         Ok(request.into_inner())
     }
@@ -60,7 +60,7 @@ impl pb::channel_service_server::ChannelService for GrpcChannelService {
         &self,
         request: Request<pb::CreateChannelRequest>,
     ) -> Result<Response<pb::Channel>, Status> {
-        let request = self.authorize(request, Action::Create, None)?;
+        let request = self.authorize(request, Action::Create, None).await?;
         let channel = self
             .service
             .create(CreateChannel { name: request.name })
@@ -74,7 +74,8 @@ impl pb::channel_service_server::ChannelService for GrpcChannelService {
         request: Request<pb::GetChannelRequest>,
     ) -> Result<Response<pb::Channel>, Status> {
         let id = request.get_ref().id;
-        self.authorize(request, Action::Read, Some(id.to_string()))?;
+        self.authorize(request, Action::Read, Some(id.to_string()))
+            .await?;
         let channel = self.service.get(id).await.map_err(to_status)?;
         Ok(Response::new(to_proto(channel)))
     }
@@ -84,7 +85,9 @@ impl pb::channel_service_server::ChannelService for GrpcChannelService {
         request: Request<pb::UpdateChannelRequest>,
     ) -> Result<Response<pb::Channel>, Status> {
         let id = request.get_ref().id;
-        let request = self.authorize(request, Action::Update, Some(id.to_string()))?;
+        let request = self
+            .authorize(request, Action::Update, Some(id.to_string()))
+            .await?;
         let channel = self
             .service
             .update(id, request.name)
@@ -98,7 +101,8 @@ impl pb::channel_service_server::ChannelService for GrpcChannelService {
         request: Request<pb::DeleteChannelRequest>,
     ) -> Result<Response<()>, Status> {
         let id = request.get_ref().id;
-        self.authorize(request, Action::Delete, Some(id.to_string()))?;
+        self.authorize(request, Action::Delete, Some(id.to_string()))
+            .await?;
         self.service.delete(id).await.map_err(to_status)?;
         Ok(Response::new(()))
     }
@@ -107,7 +111,7 @@ impl pb::channel_service_server::ChannelService for GrpcChannelService {
         &self,
         request: Request<pb::ListChannelsRequest>,
     ) -> Result<Response<pb::ListChannelsResponse>, Status> {
-        let request = self.authorize(request, Action::List, None)?;
+        let request = self.authorize(request, Action::List, None).await?;
         let (channels, total_count, next_offset) = self
             .service
             .list(ListChannels {

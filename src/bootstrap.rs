@@ -1,7 +1,7 @@
 use crate::{
-    application::{ChannelService, InMemoryAuthorizer},
+    application::ChannelService,
     config::AppConfig,
-    infrastructure::scylla::{ScyllaChannelRepository, connect},
+    infrastructure::scylla::{ScyllaAuthorizer, ScyllaChannelRepository, connect},
     pb::channel_service_server::ChannelServiceServer,
     transport::grpc::channel_service::GrpcChannelService,
 };
@@ -21,15 +21,12 @@ pub enum BootstrapError {
 
 pub async fn run(config: AppConfig) -> Result<(), BootstrapError> {
     let session = connect(&config).await.map_err(BootstrapError::Scylla)?;
+    let session = Arc::new(session);
+    let authorizer = Arc::new(ScyllaAuthorizer::new(Arc::clone(&session)));
     let repository = Arc::new(ScyllaChannelRepository::new(session));
     let channel_service = ChannelService::new(repository);
     let grpc_service = match &config.mtls {
-        Some(_) => GrpcChannelService::with_authorizer(
-            channel_service,
-            InMemoryAuthorizer::from_bindings(
-                &std::env::var("GRPC_RBAC_SUBJECTS").unwrap_or_default(),
-            ),
-        ),
+        Some(_) => GrpcChannelService::with_authorizer(channel_service, authorizer),
         None => GrpcChannelService::new(channel_service),
     };
 

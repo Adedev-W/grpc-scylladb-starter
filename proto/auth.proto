@@ -9,7 +9,6 @@ service AuthorizationService {
 message Principal {
   // Subject or SAN extracted from the verified mTLS client certificate.
   string subject = 1;
-  repeated string roles = 2;
 }
 
 message Resource {

@@ -4,16 +4,17 @@ use crate::{
 };
 use async_trait::async_trait;
 use scylla::client::session::Session;
+use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub struct ScyllaChannelRepository {
-    session: Session,
+    session: Arc<Session>,
     next_id: AtomicU64,
 }
 
 impl ScyllaChannelRepository {
-    pub fn new(session: Session) -> Self {
+    pub fn new(session: Arc<Session>) -> Self {
         Self {
             session,
             next_id: AtomicU64::new(current_time_ms()),

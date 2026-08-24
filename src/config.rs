@@ -38,20 +38,11 @@ impl AppConfig {
             .collect();
         let scylla_keyspace =
             env::var("SCYLLA_KEYSPACE").unwrap_or_else(|_| "grpc_starter".to_string());
-        let tls_values = [
+        let mtls = parse_mtls_config([
             env::var("GRPC_TLS_CERT").ok(),
             env::var("GRPC_TLS_KEY").ok(),
             env::var("GRPC_TLS_CLIENT_CA").ok(),
-        ];
-        let mtls = match tls_values {
-            [Some(server_cert), Some(server_key), Some(client_ca)] => Some(MtlsConfig {
-                server_cert: server_cert.into(),
-                server_key: server_key.into(),
-                client_ca: client_ca.into(),
-            }),
-            [None, None, None] => None,
-            _ => return Err(ConfigError::IncompleteTlsConfig),
-        };
+        ])?;
 
         Ok(Self {
             grpc_addr,
@@ -62,14 +53,33 @@ impl AppConfig {
     }
 }
 
+fn parse_mtls_config(values: [Option<String>; 3]) -> Result<Option<MtlsConfig>, ConfigError> {
+    match values {
+        [Some(server_cert), Some(server_key), Some(client_ca)] => Ok(Some(MtlsConfig {
+            server_cert: server_cert.into(),
+            server_key: server_key.into(),
+            client_ca: client_ca.into(),
+        })),
+        [None, None, None] => Ok(None),
+        _ => Err(ConfigError::IncompleteTlsConfig),
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::AppConfig;
+    use super::{AppConfig, ConfigError, parse_mtls_config};
 
     #[test]
     fn defaults_are_local_only() {
         let config = AppConfig::from_env().unwrap();
         assert_eq!(config.grpc_addr.port(), 50051);
         assert_eq!(config.scylla_keyspace, "grpc_starter");
+    }
+
+    #[test]
+    fn partial_mtls_configuration_is_rejected() {
+        let result = parse_mtls_config([Some("server.crt".into()), None, None]);
+
+        assert!(matches!(result, Err(ConfigError::IncompleteTlsConfig)));
     }
 }

@@ -20,8 +20,25 @@ PEM. Ketiganya harus tersedia bersama-sama:
 export GRPC_TLS_CERT=/path/to/server.crt
 export GRPC_TLS_KEY=/path/to/server.key
 export GRPC_TLS_CLIENT_CA=/path/to/ca.crt
-export GRPC_RBAC_SUBJECTS='reader.example=reader;writer.example=writer;admin.example=admin'
 ```
+
+Fixture mTLS development tersedia di `certs/dev/`. Regenerasi dengan:
+
+```bash
+./certs/dev/generate.sh
+```
+
+Jalankan server dengan fixture development:
+
+```bash
+set -a; source .env.example; set +a
+cargo run
+```
+
+Client harus memakai `certs/dev/ca.crt` sebagai CA dan salah satu pasangan
+client certificate/key. Role disimpan di tabel `auth_subject_roles`, bukan di
+metadata client. Migration juga men-seed `reader.example`, `writer.example`,
+dan `admin.example`.
 
 Subject diambil dari Common Name sertifikat client. Role `reader` dapat
 melakukan `read` dan `list`, `writer` juga dapat `create` dan `update`, dan
@@ -42,6 +59,12 @@ Untuk menampilkan output setiap operasi CRUD:
 
 ```bash
 TEST_GRPC_ENDPOINT=http://127.0.0.1:50051 cargo test --test channel_crud -- --nocapture
+```
+
+Test policy dengan output keputusan yang mudah dibaca:
+
+```bash
+cargo test --test rbac_policy -- --nocapture
 ```
 
 Pastikan ScyllaDB dan schema sudah aktif sebelum menjalankan server:

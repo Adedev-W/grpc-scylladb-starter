@@ -47,6 +47,13 @@ pub async fn connect(config: &AppConfig) -> Result<Session, String> {
         )
         .await
         .map_err(|error| error.to_string())?;
+    session
+        .query_unpaged(
+            "CREATE TABLE IF NOT EXISTS auth_subject_roles (subject text PRIMARY KEY, role text)",
+            &[] as &[i32],
+        )
+        .await
+        .map_err(|error| error.to_string())?;
     Ok(session)
 }
 
