@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.85.0
+          toolchain: 1.88.0
       - uses: Swatinem/rust-cache@v2
       - run: ./certs/dev/generate.sh
       - run: docker compose up -d --wait
