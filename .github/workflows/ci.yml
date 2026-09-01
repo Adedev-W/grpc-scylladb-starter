@@ -27,7 +27,7 @@ jobs:
     needs: checks
     defaults:
       run:
-        working-directory: grpc-scylladb-starter
+        working-directory: .
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable

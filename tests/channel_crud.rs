@@ -14,7 +14,7 @@ async fn channel_crud_lifecycle() -> Result<(), Box<dyn std::error::Error>> {
         .create_channel(CreateChannelRequest { name: name.clone() })
         .await?
         .into_inner();
-    println!("create: {:?}", created);
+    println!("create: {created:?}");
     assert_channel(&created, &name);
 
     let fetched = client
@@ -23,7 +23,7 @@ async fn channel_crud_lifecycle() -> Result<(), Box<dyn std::error::Error>> {
         })
         .await?
         .into_inner();
-    println!("get: {:?}", fetched);
+    println!("get: {fetched:?}");
     assert_eq!(fetched, created);
 
     let updated_name = format!("{name}-updated");
@@ -34,7 +34,7 @@ async fn channel_crud_lifecycle() -> Result<(), Box<dyn std::error::Error>> {
         })
         .await?
         .into_inner();
-    println!("update: {:?}", updated);
+    println!("update: {updated:?}");
     assert_eq!(updated.id, created.id);
     assert_eq!(updated.name, updated_name);
     assert_eq!(updated.created_at_unix_ms, created.created_at_unix_ms);
@@ -46,7 +46,7 @@ async fn channel_crud_lifecycle() -> Result<(), Box<dyn std::error::Error>> {
         })
         .await?
         .into_inner();
-    println!("list: {:?}", listed);
+    println!("list: {listed:?}");
     assert!(listed.channels.iter().any(|channel| channel == &updated));
 
     client
