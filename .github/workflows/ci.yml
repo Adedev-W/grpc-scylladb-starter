@@ -35,7 +35,8 @@ jobs:
           toolchain: 1.88.0
       - uses: Swatinem/rust-cache@v2
       - run: ./certs/dev/generate.sh
-      - run: docker compose up -d --wait
+      - run: docker compose up -d --wait scylla
+      - run: docker compose run --rm scylla-init
       - run: >-
           GRPC_TLS_CERT=certs/dev/server.crt
           GRPC_TLS_KEY=certs/dev/server.key

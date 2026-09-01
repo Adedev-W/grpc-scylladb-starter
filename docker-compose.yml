@@ -26,12 +26,14 @@ services:
       scylla:
         condition: service_healthy
     entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        echo "ScyllaDB is ready, starting initialization..."
+        cqlsh scylla -f /migrations/001_create_channels.cql
+        echo "Keyspace created successfully."
     volumes:
       - ./migrations:/migrations:ro
-    command: |
-      echo "ScyllaDB is ready, starting initialization..."
-      cqlsh scylla -f /migrations/001_create_channels.cql
-      echo "Keyspace created successfully."
 
 volumes:
   # Persists database files across container restarts
