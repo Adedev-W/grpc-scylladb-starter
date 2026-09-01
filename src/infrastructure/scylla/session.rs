@@ -17,41 +17,7 @@ pub async fn connect(config: &AppConfig) -> Result<Session, String> {
         .await
         .map_err(|error| error.to_string())?;
     session
-        .query_unpaged(
-            format!(
-                "CREATE KEYSPACE IF NOT EXISTS {} WITH replication = {{'class': 'NetworkTopologyStrategy', 'datacenter1': 1}}",
-                config.scylla_keyspace
-            ),
-            &[] as &[i32],
-        )
-        .await
-        .map_err(|error| error.to_string())?;
-    session
-        .query_unpaged(
-            format!(
-                "ALTER KEYSPACE {} WITH replication = {{'class': 'NetworkTopologyStrategy', 'datacenter1': 1}}",
-                config.scylla_keyspace
-            ),
-            &[] as &[i32],
-        )
-        .await
-        .map_err(|error| error.to_string())?;
-    session
         .use_keyspace(config.scylla_keyspace.clone(), false)
-        .await
-        .map_err(|error| error.to_string())?;
-    session
-        .query_unpaged(
-            "CREATE TABLE IF NOT EXISTS channels (id bigint PRIMARY KEY, name text, created_at_unix_ms bigint)",
-            &[] as &[i32],
-        )
-        .await
-        .map_err(|error| error.to_string())?;
-    session
-        .query_unpaged(
-            "CREATE TABLE IF NOT EXISTS auth_subject_roles (subject text PRIMARY KEY, role text)",
-            &[] as &[i32],
-        )
         .await
         .map_err(|error| error.to_string())?;
     Ok(session)

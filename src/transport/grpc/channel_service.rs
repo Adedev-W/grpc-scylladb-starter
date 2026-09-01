@@ -7,6 +7,7 @@ use crate::{
 use std::sync::Arc;
 use tonic::transport::server::{TcpConnectInfo, TlsConnectInfo};
 use tonic::{Request, Response, Status};
+use uuid::Uuid;
 
 #[derive(Clone)]
 pub struct GrpcChannelService {
@@ -49,7 +50,7 @@ impl GrpcChannelService {
                 action,
             )
             .await
-            .map_err(|_| Status::permission_denied("access denied"))?;
+            .map_err(to_authorization_status)?;
         Ok(request.into_inner())
     }
 }
@@ -73,7 +74,7 @@ impl pb::channel_service_server::ChannelService for GrpcChannelService {
         &self,
         request: Request<pb::GetChannelRequest>,
     ) -> Result<Response<pb::Channel>, Status> {
-        let id = request.get_ref().id;
+        let id = parse_id(&request.get_ref().id)?;
         self.authorize(request, Action::Read, Some(id.to_string()))
             .await?;
         let channel = self.service.get(id).await.map_err(to_status)?;
@@ -84,7 +85,7 @@ impl pb::channel_service_server::ChannelService for GrpcChannelService {
         &self,
         request: Request<pb::UpdateChannelRequest>,
     ) -> Result<Response<pb::Channel>, Status> {
-        let id = request.get_ref().id;
+        let id = parse_id(&request.get_ref().id)?;
         let request = self
             .authorize(request, Action::Update, Some(id.to_string()))
             .await?;
@@ -100,7 +101,7 @@ impl pb::channel_service_server::ChannelService for GrpcChannelService {
         &self,
         request: Request<pb::DeleteChannelRequest>,
     ) -> Result<Response<()>, Status> {
-        let id = request.get_ref().id;
+        let id = parse_id(&request.get_ref().id)?;
         self.authorize(request, Action::Delete, Some(id.to_string()))
             .await?;
         self.service.delete(id).await.map_err(to_status)?;
@@ -112,18 +113,17 @@ impl pb::channel_service_server::ChannelService for GrpcChannelService {
         request: Request<pb::ListChannelsRequest>,
     ) -> Result<Response<pb::ListChannelsResponse>, Status> {
         let request = self.authorize(request, Action::List, None).await?;
-        let (channels, total_count, next_offset) = self
+        let (channels, next_page_token) = self
             .service
             .list(ListChannels {
-                offset: request.offset,
+                page_token: request.page_token,
                 limit: request.limit,
             })
             .await
             .map_err(to_status)?;
         Ok(Response::new(pb::ListChannelsResponse {
             channels: channels.into_iter().map(to_proto).collect(),
-            next_offset,
-            total_count: total_count as u64,
+            next_page_token: next_page_token.unwrap_or_default(),
         }))
     }
 }
@@ -152,9 +152,27 @@ fn principal_from_request<T>(request: &Request<T>) -> Result<Principal, Status> 
 
 fn to_proto(channel: crate::domain::channel::Channel) -> pb::Channel {
     pb::Channel {
-        id: channel.id,
+        id: channel.id.to_string(),
         name: channel.name,
         created_at_unix_ms: channel.created_at_unix_ms,
+    }
+}
+
+fn parse_id(value: &str) -> Result<Uuid, Status> {
+    Uuid::parse_str(value).map_err(|_| Status::invalid_argument("id must be a valid UUID"))
+}
+
+fn to_authorization_status(error: crate::application::AuthorizationError) -> Status {
+    match error {
+        crate::application::AuthorizationError::AccessDenied => {
+            Status::permission_denied("access denied")
+        }
+        crate::application::AuthorizationError::EmptySubject => {
+            Status::unauthenticated("client certificate has no subject")
+        }
+        crate::application::AuthorizationError::Storage(_) => {
+            Status::unavailable("authorization service is unavailable")
+        }
     }
 }
 
@@ -166,8 +184,11 @@ fn to_status(error: crate::application::channel_service::ApplicationError) -> St
         crate::application::channel_service::ApplicationError::NotFound => {
             Status::not_found("channel not found")
         }
-        crate::application::channel_service::ApplicationError::Repository(error) => {
-            Status::internal(error.to_string())
-        }
+        crate::application::channel_service::ApplicationError::Repository(
+            crate::application::ports::RepositoryError::Unavailable(_),
+        ) => Status::unavailable("channel repository is unavailable"),
+        crate::application::channel_service::ApplicationError::Repository(
+            crate::application::ports::RepositoryError::Operation(_),
+        ) => Status::internal("channel operation failed"),
     }
 }

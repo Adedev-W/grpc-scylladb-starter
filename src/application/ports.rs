@@ -1,6 +1,7 @@
 use crate::domain::channel::Channel;
 use async_trait::async_trait;
 use thiserror::Error;
+use uuid::Uuid;
 
 #[derive(Debug, Error)]
 pub enum RepositoryError {
@@ -13,12 +14,12 @@ pub enum RepositoryError {
 #[async_trait]
 pub trait ChannelRepository: Send + Sync {
     async fn create(&self, name: String) -> Result<Channel, RepositoryError>;
-    async fn get(&self, id: u64) -> Result<Option<Channel>, RepositoryError>;
-    async fn update(&self, id: u64, name: String) -> Result<Option<Channel>, RepositoryError>;
-    async fn delete(&self, id: u64) -> Result<bool, RepositoryError>;
+    async fn get(&self, id: Uuid) -> Result<Option<Channel>, RepositoryError>;
+    async fn update(&self, id: Uuid, name: String) -> Result<Option<Channel>, RepositoryError>;
+    async fn delete(&self, id: Uuid) -> Result<bool, RepositoryError>;
     async fn list(
         &self,
-        offset: usize,
+        page_token: Option<Vec<u8>>,
         limit: usize,
-    ) -> Result<(Vec<Channel>, usize), RepositoryError>;
+    ) -> Result<(Vec<Channel>, Option<Vec<u8>>), RepositoryError>;
 }

@@ -1,19 +1,13 @@
+mod common;
+
 use grpc_scylladb_starter::pb::{
     Channel, CreateChannelRequest, DeleteChannelRequest, GetChannelRequest, ListChannelsRequest,
-    UpdateChannelRequest, channel_service_client::ChannelServiceClient,
+    UpdateChannelRequest,
 };
-use tonic::transport::Channel as TransportChannel;
-
-const DEFAULT_ENDPOINT: &str = "http://127.0.0.1:50051";
 
 #[tokio::test]
 async fn channel_crud_lifecycle() -> Result<(), Box<dyn std::error::Error>> {
-    let endpoint =
-        std::env::var("TEST_GRPC_ENDPOINT").unwrap_or_else(|_| DEFAULT_ENDPOINT.to_string());
-    let transport = TransportChannel::from_shared(endpoint.clone())?
-        .connect()
-        .await?;
-    let mut client = ChannelServiceClient::new(transport);
+    let mut client = common::connect_client(None).await?;
     let name = format!("integration-channel-{}", unique_suffix());
 
     let created = client
@@ -24,7 +18,9 @@ async fn channel_crud_lifecycle() -> Result<(), Box<dyn std::error::Error>> {
     assert_channel(&created, &name);
 
     let fetched = client
-        .get_channel(GetChannelRequest { id: created.id })
+        .get_channel(GetChannelRequest {
+            id: created.id.clone(),
+        })
         .await?
         .into_inner();
     println!("get: {:?}", fetched);
@@ -33,7 +29,7 @@ async fn channel_crud_lifecycle() -> Result<(), Box<dyn std::error::Error>> {
     let updated_name = format!("{name}-updated");
     let updated = client
         .update_channel(UpdateChannelRequest {
-            id: created.id,
+            id: created.id.clone(),
             name: updated_name.clone(),
         })
         .await?
@@ -45,7 +41,7 @@ async fn channel_crud_lifecycle() -> Result<(), Box<dyn std::error::Error>> {
 
     let listed = client
         .list_channels(ListChannelsRequest {
-            offset: 0,
+            page_token: Vec::new(),
             limit: 100,
         })
         .await?
@@ -54,7 +50,9 @@ async fn channel_crud_lifecycle() -> Result<(), Box<dyn std::error::Error>> {
     assert!(listed.channels.iter().any(|channel| channel == &updated));
 
     client
-        .delete_channel(DeleteChannelRequest { id: created.id })
+        .delete_channel(DeleteChannelRequest {
+            id: created.id.clone(),
+        })
         .await?;
     println!("delete: channel {} deleted", created.id);
 
@@ -73,7 +71,7 @@ async fn channel_crud_lifecycle() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn assert_channel(channel: &Channel, expected_name: &str) {
-    assert!(channel.id > 0);
+    assert!(!channel.id.is_empty());
     assert_eq!(channel.name, expected_name);
     assert!(channel.created_at_unix_ms > 0);
 }

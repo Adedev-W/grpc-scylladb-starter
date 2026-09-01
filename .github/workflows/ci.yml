@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: grpc-scylladb-starter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.85.0
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --all-targets --all-features -- -D warnings
+      - run: cargo test --lib
+      - run: cargo test --test rbac_policy
+
+  integration:
+    runs-on: ubuntu-latest
+    needs: checks
+    defaults:
+      run:
+        working-directory: grpc-scylladb-starter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.85.0
+      - uses: Swatinem/rust-cache@v2
+      - run: ./certs/dev/generate.sh
+      - run: docker compose up -d --wait
+      - run: >-
+          GRPC_TLS_CERT=certs/dev/server.crt
+          GRPC_TLS_KEY=certs/dev/server.key
+          GRPC_TLS_CLIENT_CA=certs/dev/ca.crt
+          nohup cargo run > /tmp/grpc-scylladb-server.log 2>&1 &
+      - run: |
+          for attempt in {1..30}; do
+            (echo > /dev/tcp/127.0.0.1/50051) >/dev/null 2>&1 && break
+            sleep 1
+          done
+          TEST_GRPC_ENDPOINT=https://127.0.0.1:50051 \
+            cargo test --test channel_crud -- --nocapture
+          TEST_GRPC_ENDPOINT=https://127.0.0.1:50051 \
+            cargo test --test rbac_grpc -- --nocapture
+      - if: always()
+        run: docker compose logs

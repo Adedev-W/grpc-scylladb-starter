@@ -13,7 +13,7 @@ service ChannelService {
 }
 
 message Channel {
-  uint64 id = 1;
+  string id = 1;
   string name = 2;
   uint64 created_at_unix_ms = 3;
 }
@@ -23,25 +23,24 @@ message CreateChannelRequest {
 }
 
 message GetChannelRequest {
-  uint64 id = 1;
+  string id = 1;
 }
 
 message UpdateChannelRequest {
-  uint64 id = 1;
+  string id = 1;
   string name = 2;
 }
 
 message DeleteChannelRequest {
-  uint64 id = 1;
+  string id = 1;
 }
 
 message ListChannelsRequest {
-  uint64 offset = 1;
+  bytes page_token = 1;
   uint32 limit = 2;
 }
 
 message ListChannelsResponse {
   repeated Channel channels = 1;
-  uint64 next_offset = 2;
-  uint64 total_count = 3;
+  bytes next_page_token = 2;
 }

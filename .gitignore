@@ -1,4 +1,8 @@
 /target
 .env
-AGENTS.md
+certs/dev/*.key
+certs/dev/*.crt
+certs/dev/*.csr
+certs/dev/*.ext
+certs/dev/*.srl
 notes/

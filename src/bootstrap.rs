@@ -27,7 +27,8 @@ pub async fn run(config: AppConfig) -> Result<(), BootstrapError> {
     let channel_service = ChannelService::new(repository);
     let grpc_service = match &config.mtls {
         Some(_) => GrpcChannelService::with_authorizer(channel_service, authorizer),
-        None => GrpcChannelService::new(channel_service),
+        None if config.allow_insecure => GrpcChannelService::new(channel_service),
+        None => unreachable!("insecure mode is rejected by configuration"),
     };
 
     log_server_start(&config);

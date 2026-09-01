@@ -3,32 +3,27 @@ use grpc_scylladb_starter::application::{Action, role_allows};
 #[test]
 fn rbac_policy_is_easy_to_read() {
     let cases = [
-        ("reader", Action::Read, true, "reader dapat membaca channel"),
+        ("reader", Action::Read, true, "reader can read channels"),
         (
             "reader",
             Action::Delete,
             false,
-            "reader tidak dapat menghapus channel",
+            "reader cannot delete channels",
         ),
-        (
-            "writer",
-            Action::Create,
-            true,
-            "writer dapat membuat channel",
-        ),
+        ("writer", Action::Create, true, "writer can create channels"),
         (
             "writer",
             Action::Delete,
             false,
-            "writer tidak dapat menghapus channel",
+            "writer cannot delete channels",
         ),
+        ("admin", Action::Delete, true, "admin can delete channels"),
         (
-            "admin",
-            Action::Delete,
-            true,
-            "admin dapat menghapus channel",
+            "unknown",
+            Action::Read,
+            false,
+            "subjects without a role are denied",
         ),
-        ("unknown", Action::Read, false, "subject tanpa role ditolak"),
     ];
 
     for (role, action, expected, explanation) in cases {
